@@ -7,7 +7,9 @@ export default class HYPERLIQUID extends Exchange {
       {
         url: 'https://api.hyperliquid.xyz/info',
         method: 'POST',
-        data: JSON.stringify({ type: 'meta' }),
+        // liquidation-terminal: core perps plus every HIP-3 builder dex (xyz:TSLA, km:US500…)
+        // in one request; `meta` only lists the core perps
+        data: JSON.stringify({ type: 'allPerpMetas' }),
         proxy: false
       }
     ]
@@ -20,17 +22,32 @@ export default class HYPERLIQUID extends Exchange {
   formatProducts(response) {
     const products = []
 
-    const perpResponse = response
+    // allPerpMetas: one meta per dex, the core one first. A plain `meta` object is still accepted.
+    const metas = Array.isArray(response) ? response : [response]
 
-    if (perpResponse && perpResponse.universe && perpResponse.universe.length) {
-      for (const product of perpResponse.universe) {
-        products.push(product.name)
+    for (const meta of metas) {
+      if (meta && meta.universe && meta.universe.length) {
+        for (const product of meta.universe) {
+          products.push(product.name)
+        }
       }
     }
 
     return {
       products
     }
+  }
+
+  /**
+   * liquidation-terminal: product lists cached before HIP-3 support only hold core perps.
+   * Rejecting them makes the worker refetch instead of waiting out the 7-day cache.
+   */
+  validateProducts(data) {
+    return !!(
+      data &&
+      Array.isArray(data.products) &&
+      data.products.some(name => name.indexOf(':') !== -1)
+    )
   }
 
   /**

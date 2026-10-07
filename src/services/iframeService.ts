@@ -5,6 +5,8 @@ import {
   stripStableQuote
 } from '@/services/productsService'
 import store from '@/store'
+import { HYPERLIQUID, HYPERLIQUID_PARTNERS } from '@/store/exchanges'
+import aggregatorService from '@/services/aggregatorService'
 import workspacesService from '@/services/workspacesService'
 import { INFRAME } from '@/utils/constants'
 import { subscribeOnce } from '../utils/store'
@@ -41,6 +43,14 @@ async function resolveBases(
   const spotAllowed = new Set(spotExchanges)
   const markets: string[] = []
 
+  // HIP-3 builder dexes relist some core coins (hyna:BTC…). Those are separate thin books, so a
+  // coin the core Hyperliquid market already has keeps only the core one.
+  const coreHyperliquid = new Set(
+    (indexedProducts.HYPERLIQUID || [])
+      .filter(product => String(product.pair).indexOf(':') === -1)
+      .map(product => normalizeBase(product.base))
+  )
+
   for (const exchangeId of Object.keys(indexedProducts)) {
     if (allowed.size && !allowed.has(exchangeId)) {
       continue
@@ -50,6 +60,14 @@ async function resolveBases(
       const typeAllowed =
         product.type === 'perp' ||
         (product.type === 'spot' && spotAllowed.has(exchangeId))
+
+      if (
+        exchangeId === 'HYPERLIQUID' &&
+        String(product.pair).indexOf(':') !== -1 &&
+        coreHyperliquid.has(normalizeBase(product.base))
+      ) {
+        continue
+      }
 
       if (
         typeAllowed &&
@@ -188,6 +206,9 @@ class IframeService {
           })
           this.send('settings', this.globalSettings())
           break
+        case 'liquidations':
+          this.injectLiquidations(json.data)
+          break
         case 'toggleExchange':
           store.dispatch('exchanges/toggleExchange', json.data.id).then(() => {
             this.send('settings', this.globalSettings())
@@ -272,6 +293,63 @@ class IframeService {
     }
 
     this.send('panes', applied)
+  }
+
+  /**
+   * liquidation-terminal: liquidations relayed by the embedding dashboard for exchanges whose
+   * public feed has none (Hyperliquid). They enter the worker as if the exchange had emitted
+   * them, so lists and chart bars treat them like any other venue.
+   *
+   * They are dropped unless Binance Futures and OKX run alongside: Hyperliquid on its own is
+   * not allowed, globally or in any pane that listens to the Hyperliquid market.
+   */
+  injectLiquidations(
+    rows: Array<{
+      exchange: string
+      pair: string
+      timestamp: number
+      price: number
+      size: number
+      side: 'buy' | 'sell'
+    }>
+  ) {
+    if (!Array.isArray(rows) || !rows.length) {
+      return
+    }
+
+    const exchanges = store.state.exchanges
+    if (
+      [HYPERLIQUID, ...HYPERLIQUID_PARTNERS].some(
+        id => !exchanges[id] || exchanges[id].disabled
+      )
+    ) {
+      return
+    }
+
+    const panes = Object.values(store.state.panes.panes)
+    const trades = rows.filter(row => {
+      if (row.exchange !== HYPERLIQUID) {
+        return false
+      }
+
+      const market = `${row.exchange}:${row.pair}`
+      return panes
+        .filter(pane => (pane.markets || []).includes(market))
+        .every(pane =>
+          HYPERLIQUID_PARTNERS.every(partner =>
+            (pane.markets || []).some(m => m.startsWith(partner + ':'))
+          )
+        )
+    })
+
+    if (!trades.length) {
+      return
+    }
+
+    aggregatorService.worker.postMessage({
+      op: 'injectLiquidations',
+      data: trades.map(trade => ({ ...trade, liquidation: true }))
+    })
   }
 
   send(op: string, data?: any) {

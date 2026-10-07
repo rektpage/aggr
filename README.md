@@ -1,9 +1,11 @@
 
 # SignificantTrade
 
+> **Modified version.** This is a fork of [Tucsky/aggr](https://github.com/Tucsky/aggr), modified for rekt.page starting 2026-09-16 and changed since. The changes embed the chart in the rekt.page terminal, self-host its services and trim the exchange list; the full list is in this repository's commit history on the `rekt.page` branch. Like the original, this version is licensed under the GNU General Public License v3.0 (see [LICENSE](LICENSE)).
+
 Cryptocurrency market trades aggregator./
 
-Currently supporting Kucoin, BitMEX, Bitfinex, Binance, Coinbase, Bitstamp, Deribit, Huobi, Okex, Hitbtc, Poloniex, Bybit, Bitget, Bitunix, Gate.io and Crypto.com ([see src/exchanges/](src/exchanges) for detail)
+Currently supporting Bitfinex, Binance, Coinbase, Bitstamp, Deribit, Huobi, Okex, Hitbtc, Poloniex, Bybit, Bitget, Bitunix, Gate.io and Crypto.com ([see src/exchanges/](src/exchanges) for detail)
 
 ![screenshot](https://i.imgur.com/nHJxsdL.gif)
 

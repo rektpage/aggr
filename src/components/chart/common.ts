@@ -51,10 +51,10 @@ export function syncCrosshair(params, originalPaneId = null) {
 /*
 {
   "currency_code": "USDT",
-  "exchange": "KUCOIN",
+  "exchange": "BINANCE",
   "base_currency": "JASMY",
   "type": "spot",
-  "id": "KUCOIN:JASMYUSDT"
+  "id": "BINANCE:JASMYUSDT"
 }
 */
 export async function syncMarket(market) {

@@ -12,6 +12,10 @@ export type ExchangesState = { [exchangeId: string]: ExchangeSettings } & {
   _exchanges: string[]
 }
 
+// liquidation-terminal: Hyperliquid may only run together with these exchanges (see toggleExchange)
+export const HYPERLIQUID = 'HYPERLIQUID'
+export const HYPERLIQUID_PARTNERS = ['BINANCE_FUTURES', 'OKEX']
+
 export const supportedExchanges = import.meta.env.VITE_APP_EXCHANGES.split(
   ','
 ).map(id => id.toUpperCase())
@@ -71,6 +75,23 @@ const actions = {
     }
 
     this.commit('app/EXCHANGE_UPDATED', id)
+
+    // liquidation-terminal: Hyperliquid liquidations are relayed by the embedding dashboard
+    // and must never be shown on their own, so Hyperliquid only runs alongside these two.
+    if (id === HYPERLIQUID && !state[id].disabled) {
+      for (const partner of HYPERLIQUID_PARTNERS) {
+        if (state[partner] && state[partner].disabled) {
+          await dispatch('toggleExchange', partner)
+        }
+      }
+    } else if (
+      HYPERLIQUID_PARTNERS.includes(id) &&
+      state[id].disabled &&
+      state[HYPERLIQUID] &&
+      !state[HYPERLIQUID].disabled
+    ) {
+      await dispatch('toggleExchange', HYPERLIQUID)
+    }
   },
   async disconnect({ rootState }, id: string) {
     const exchangeRegex = new RegExp(`^${id}:`, 'i')

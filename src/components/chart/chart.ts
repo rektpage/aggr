@@ -2453,8 +2453,11 @@ export default class Chart {
         rightTime = Date.now() / 1000
       }
 
+      // rekt.page: history comes in cached chunks of 500 bars, so the first request may as well
+      // fill the chart (300 bars) instead of the stock 20, which left an almost empty chart at 1m
+      const firstBars = historicalService.chunkUrl ? 300 : 20
       rangeToFetch = {
-        from: rightTime - timeframe * 20,
+        from: rightTime - timeframe * firstBars,
         to: rightTime
       }
     } else {

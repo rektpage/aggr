@@ -18,7 +18,6 @@ const TWO_DIGITS_REGEX = /\d{2}/
 const KRAKEN_FUTURES_REGEX = /(PI|FI|PF)_/
 const HUOBI_SUFFIXES_REGEX = /_CW|_CQ|_NW|_NQ/i
 const DERIBIT_PERP_REGEX = /_(\w+)-PERPETUAL/i
-const KUCOIN_SUFFIX_REGEX = /M$/
 const PERP_QUOTE_REGEX = /-PERP(ETUAL)?/i
 const XBT_BASE_REGEX = /xbt$|^xbt/i
 const PERP_SUFFIX_REGEX = /[^a-z0-9](perp|swap|perpetual)$/i
@@ -346,7 +345,7 @@ export function getMarketProduct(exchangeId, symbol, noStable?: boolean) {
     } else {
       type = 'perp'
     }
-  } else if (exchangeId === 'BITMEX' || SWAP_OR_PERP_REGEX.test(symbol)) {
+  } else if (SWAP_OR_PERP_REGEX.test(symbol)) {
     if (TWO_DIGITS_REGEX.test(symbol)) {
       type = 'future'
     } else {
@@ -359,8 +358,6 @@ export function getMarketProduct(exchangeId, symbol, noStable?: boolean) {
     UNDERSCORE_REGEX.test(symbol) &&
     type === 'spot'
   ) {
-    type = 'perp'
-  } else if (exchangeId === 'KUCOIN' && symbol.indexOf('-') === -1) {
     type = 'perp'
   } else if (exchangeId === 'BITUNIX' && BITUNIX_PERP_REGEX.test(symbol)) {
     type = 'perp'
@@ -380,12 +377,11 @@ export function getMarketProduct(exchangeId, symbol, noStable?: boolean) {
     localSymbol = localSymbol.replace(HUOBI_SUFFIXES_REGEX, 'USD')
   } else if (exchangeId === 'DERIBIT') {
     localSymbol = localSymbol.replace(DERIBIT_PERP_REGEX, '$1')
-  } else if (exchangeId === 'KUCOIN') {
-    localSymbol = localSymbol.replace(KUCOIN_SUFFIX_REGEX, '')
   } else if (exchangeId === 'COINBASE' && type === 'perp') {
     localSymbol = localSymbol.replace(COINBASE_INTX_REGEX, '')
   } else if (exchangeId === 'HYPERLIQUID') {
-    localSymbol = localSymbol.replace(/^k/, '') + 'USD'
+    // liquidation-terminal: HIP-3 markets carry their builder dex (xyz:TSLA); the coin is TSLA
+    localSymbol = localSymbol.replace(/^[a-z0-9]+:/i, '').replace(/^k/, '') + 'USD'
   } else if (exchangeId === 'PHEMEX') {
     localSymbol = localSymbol.replace(/^[a-z]/, '')
   } else if (exchangeId === 'WHITEBIT') {

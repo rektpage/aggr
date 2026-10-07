@@ -30,7 +30,6 @@ process.env.VITE_APP_BUILD_DATE =
 // liquidation-terminal: 'AGGR' (sentiment.aggr.trade pseudo-exchange) removed
 process.env.VITE_APP_EXCHANGES = [
   'ASTER',
-  'BITMEX',
   'BINANCE_FUTURES',
   'BINANCE_US',
   'KRAKEN',
@@ -48,7 +47,6 @@ process.env.VITE_APP_EXCHANGES = [
   'DYDX',
   'MEXC',
   'MEXC_FUTURES',
-  'KUCOIN',
   'BITGET',
   'BITUNIX',
   'GATEIO',

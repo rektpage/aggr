@@ -11,6 +11,7 @@ import { ListenedProduct } from './app'
 import { getMarketProduct, parseMarket } from '../services/productsService'
 import { GridItem, GridSpace, findOrCreateSpace } from '@/utils/grid'
 import dialogService from '@/services/dialogService'
+import { withHyperliquidPartners } from '@/utils/hyperliquidPartners'
 
 enum StaticPaneType {
   website = 'website',
@@ -189,6 +190,19 @@ const actions = {
     { rootState, commit, state },
     { markets, id } = {}
   ) {
+    // liquidation-terminal: a pane never follows Hyperliquid alone (see hyperliquidPartners)
+    if (markets && markets.length) {
+      const enforced = await withHyperliquidPartners(markets)
+      markets = enforced.markets
+
+      if (enforced.dropped.length) {
+        this.dispatch('app/showNotice', {
+          type: 'error',
+          title: `Hyperliquid only runs alongside Binance Futures and OKX. Removed ${enforced.dropped.join(', ')} (not listed on both).`
+        })
+      }
+    }
+
     // cache original listeners (market: n listeners)
     const originalListeners: { [marketKey: string]: number } = Object.keys(
       state.marketsListeners

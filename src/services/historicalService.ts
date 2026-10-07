@@ -19,14 +19,21 @@ export interface HistoricalResponse {
   initialPrices: InitialPrices
 }
 
+/** bars per history chunk; must match the proxy (infra/proxy, /bars) */
+const CHUNK_BARS = 500
+
 class HistoricalService extends EventEmitter {
   url: string
+  /** set when the API serves fixed chunks (rekt.page proxy); empty for a stock aggr-server */
+  chunkUrl: string
   promisesOfData: { [keyword: string]: Promise<HistoricalResponse> } = {}
 
   constructor() {
     super()
 
     this.url = getApiUrl('historical')
+    this.chunkUrl =
+      import.meta.env.VITE_APP_API_CHUNKS === '1' ? getApiUrl('chunk') : ''
   }
 
   filterOutUnavailableMarkets(markets: string[]) {
@@ -45,6 +52,78 @@ class HistoricalService extends EventEmitter {
     return `${this.url}/${params.join('/')}`
   }
 
+  /**
+   * rekt.page serves history as fixed chunks of CHUNK_BARS bars per coin and timeframe
+   * (proxy /bars/chunk/{coin}/{timeframe}/{index}), so every visitor asks for the same URLs and
+   * Cloudflare can cache them. Any range is mapped onto the chunks that cover it, then trimmed
+   * back to the requested markets and range. Only BTC and ETH are served.
+   */
+  coinOf(markets: string[]) {
+    const coins = new Set(
+      markets.map(market => {
+        const pair = market.toUpperCase()
+        return pair.includes('BTC') ? 'BTC' : pair.includes('ETH') ? 'ETH' : ''
+      })
+    )
+    return coins.size === 1 ? [...coins][0] : ''
+  }
+
+  fetchChunks(
+    from: number,
+    to: number,
+    timeframe: number,
+    markets: string[]
+  ): Promise<{ results: any[]; columns: { [key: string]: number } }> {
+    const coin = this.coinOf(markets)
+    if (!coin) {
+      return Promise.reject(new Error('No more data'))
+    }
+    const span = CHUNK_BARS * timeframe * 1000
+    const first = Math.floor(from / span)
+    const last = Math.floor(to / span)
+    const urls = []
+    for (let index = first; index <= last; index++) {
+      urls.push(`${this.chunkUrl}/${coin}/${timeframe}/${index}`)
+    }
+    const wanted = new Set(markets)
+
+    return Promise.all(
+      urls.map(url =>
+        fetch(url).then(response => {
+          if (!response.ok) {
+            throw new Error(`history ${response.status}`)
+          }
+          return response.json()
+        })
+      )
+    ).then(chunks => {
+      const columns = chunks.find(chunk => chunk && chunk.columns)?.columns
+      if (!columns) {
+        return { results: [], columns: {} }
+      }
+      const fromSeconds = from / 1000
+      const toSeconds = to / 1000
+      const results = []
+      for (const chunk of chunks) {
+        for (const row of chunk.results || []) {
+          const time = row[columns.time]
+          // The end is exclusive: when scrolling back the chart asks for [older, cacheStart), and an
+          // inclusive end returned the bar at cacheStart too. The chart cache then saw the older
+          // batch overlap what it already had, dropped it, and asked for the same range forever —
+          // so only the first ~300 bars (5 minutes at 1s) were ever shown.
+          if (
+            time >= fromSeconds &&
+            time < toSeconds &&
+            wanted.has(row[columns.market])
+          ) {
+            results.push(row)
+          }
+        }
+      }
+      return { results, columns }
+    })
+  }
+
   fetch(
     from: number,
     to: number,
@@ -52,6 +131,33 @@ class HistoricalService extends EventEmitter {
     markets: string[]
   ): Promise<HistoricalResponse> {
     const url = this.getApiUrl(from, to, timeframe, markets)
+
+    if (this.promisesOfData[url]) {
+      return this.promisesOfData[url]
+    }
+
+    if (this.chunkUrl) {
+      this.promisesOfData[url] = this.fetchChunks(from, to, timeframe, markets)
+        .then(({ results, columns }) => {
+          if (!results.length) {
+            throw new Error('No more data')
+          }
+          return this.normalizePoints(results, columns, timeframe, markets)
+        })
+        .catch(err => {
+          handleFetchError(err)
+
+          throw err
+        })
+        .then(data => {
+          store.commit('app/TOGGLE_LOADING', false)
+          delete this.promisesOfData[url]
+
+          return data
+        })
+
+      return this.promisesOfData[url]
+    }
 
     if (this.promisesOfData[url]) {
       return this.promisesOfData[url]

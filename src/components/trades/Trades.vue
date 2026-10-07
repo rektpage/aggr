@@ -5,23 +5,12 @@
       ref="paneHeader"
       :settings="() => import('@/components/trades/TradesDialog.vue')"
     >
-      <template v-slot:menu>
-        <button
-          type="button"
-          class="dropdown-item"
-          @click="upgradeToLite"
-          title="✨ Upgrade to the canvas based feed for better performance ✨"
-          v-tippy="{
-            placement: 'left',
-            boundary: 'window',
-            followCursor: true,
-            distance: 32
-          }"
-        >
-          🚀
-          <span class="ml8">Upgrade</span>
-        </button>
-      </template>
+      <!--
+        liquidation-terminal: no "Upgrade" item. It swaps this pane for trades-lite with no way
+        back, while the embedding dashboard drives the pane as a trades list. The widget reset in
+        the dashboard restores the bundled workspace if a pane type ever changes.
+      -->
+
       <hr />
       <dropdown v-model="sliderDropdownTrigger" interactive no-scroll>
         <slider

@@ -226,6 +226,19 @@ class Aggregator {
     }
   }
 
+  /**
+   * liquidation-terminal: liquidations relayed from the main thread (see iframeService), handed
+   * to their exchange so they take the same path as ones it received itself. Markets that are
+   * not connected are skipped there, like any other liquidation.
+   */
+  injectLiquidations(trades: Trade[]) {
+    const exchange = trades.length && getExchangeById(trades[0].exchange)
+
+    if (exchange) {
+      exchange.emitLiquidations(null, trades)
+    }
+  }
+
   emitLiquidations(trades: Trade[]) {
     for (let i = 0; i < trades.length; i++) {
       const trade = trades[i]

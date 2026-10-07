@@ -8,7 +8,6 @@ import BinanceUs from './binance_us'
 import Bitfinex from './bitfinex'
 import Bitget from './bitget'
 import Bitmart from './bitmart'
-import Bitmex from './bitmex'
 import Bitstamp from './bitstamp'
 import Bitunix from './bitunix'
 import Bybit from './bybit'
@@ -21,7 +20,6 @@ import Hitbtc from './hitbtc'
 import Huobi from './huobi'
 import Hyperliquid from './hyperliquid'
 import Kraken from './kraken'
-import Kucoin from './kucoin'
 import Mexc from './mexc/mexc'
 import Okex from './okex'
 import Phemex from './phemex'
@@ -30,7 +28,6 @@ import WhiteBIT from './whitebit'
 
 export const exchanges = [
   new Aster(),
-  new Bitmex(),
   new BinanceFutures(),
   new BinanceUs(),
   new Kraken(),
@@ -47,7 +44,6 @@ export const exchanges = [
   new Phemex(),
   new Dydx(),
   new Mexc(),
-  new Kucoin(),
   new Bitget(),
   new Bitunix(),
   new Gateio(),
