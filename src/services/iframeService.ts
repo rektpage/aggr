@@ -7,6 +7,7 @@ import {
 import store from '@/store'
 import { HYPERLIQUID, HYPERLIQUID_PARTNERS } from '@/store/exchanges'
 import aggregatorService from '@/services/aggregatorService'
+import audioService from '@/services/audioService'
 import workspacesService from '@/services/workspacesService'
 import { INFRAME } from '@/utils/constants'
 import { subscribeOnce } from '../utils/store'
@@ -235,6 +236,10 @@ class IframeService {
               store.commit(`${paneId}/SET_AUDIO_THRESHOLD`, json.data?.value ?? null)
             }
           }
+          break
+        case 'setAudioDelay':
+          // rekt.page: 송출 화면에서 소리를 화면에 맞춰 늦춘다 (ms, 10-10)
+          audioService.extraDelay = Math.max(0, Math.min(5000, +json.data?.value || 0)) / 1000
           break
         case 'exportWorkspace':
           this.exportWorkspace()

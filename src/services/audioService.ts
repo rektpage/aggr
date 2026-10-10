@@ -126,6 +126,12 @@ class AudioService {
   output: any
   count = 0
   minTime = 0
+  /**
+   * rekt.page (2026-10-10): extra delay (s) on every sound. On the livestream the list rows reach the
+   * captured screen ~1.3s after the sound plays (measured on the recording), so the stream holds the
+   * sounds back by that much to land with the rows. 0 everywhere else.
+   */
+  extraDelay = 0
   gainNode: any
 
   connect() {
@@ -496,7 +502,7 @@ class AudioService {
       cueTime = 0.08
     }
 
-    const time = this.minTime + cueTime + delay
+    const time = this.minTime + cueTime + (delay || 0) + this.extraDelay
 
     this.minTime += cueTime
     this.count++
