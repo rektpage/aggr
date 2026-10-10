@@ -223,6 +223,14 @@ class IframeService {
             }
           }
           break
+        case 'setTradesAudioThreshold':
+          // rekt.page: 체결 목록이 소리를 낼 최소 금액. '100%' = 목록에 뜨는 체결만 소리를 낸다 (송출 화면, 10-10)
+          for (const paneId in store.state.panes.panes) {
+            if (store.state.panes.panes[paneId].type === 'trades') {
+              store.commit(`${paneId}/SET_AUDIO_THRESHOLD`, json.data?.value ?? null)
+            }
+          }
+          break
         case 'exportWorkspace':
           this.exportWorkspace()
           break
