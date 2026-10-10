@@ -1,6 +1,6 @@
 import audioService, { AudioFunction } from '@/services/audioService'
 import gifsService from '@/services/gifsService'
-import { formatAmount, formatMarketPrice } from '@/services/productsService'
+import { formatAmount } from '@/services/productsService'
 import store from '@/store'
 import { SlippageMode, Trade } from '@/types/types'
 import {
@@ -35,6 +35,19 @@ interface PreparedAudioStep {
   buy: AudioFunction
   sell: AudioFunction
 }
+
+/**
+ * rekt.page (2026-10-10): one precision for every row of a list. formatMarketPrice uses each
+ * market's tick size, but several markets have no tick size in the product list, so their prices
+ * came out raw — 82655 next to 82649.5 in the same BTC list. The precision now follows the size of
+ * the price, the same for every exchange.
+ */
+function formatTapePrice(price: number) {
+  if (!price) return '0'
+  const decimals = price >= 10000 ? 1 : price >= 100 ? 2 : price >= 1 ? 3 : price >= 0.01 ? 5 : 7
+  return price.toFixed(decimals)
+}
+
 export default class TradesFeed {
   paneId: string
   containerElement: HTMLElement
@@ -321,9 +334,8 @@ export default class TradesFeed {
     ${pairName}
     ${
       this.showPrices
-        ? `<div class="trade__price">${priceSlippage}<span>${formatMarketPrice(
-            this.showAvgPrice ? trade.avgPrice : trade.price,
-            marketKey
+        ? `<div class="trade__price">${priceSlippage}<span>${formatTapePrice(
+            this.showAvgPrice ? trade.avgPrice : trade.price
           )}</span></div>`
         : ''
     }
