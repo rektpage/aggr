@@ -3,7 +3,7 @@
     <p v-if="rektLocked" class="thresholds__rekt-lock">
       rekt.page default thresholds are on. Turn off &ldquo;Use default thresholds&rdquo; in the chart widget&rsquo;s symbol menu to edit.
     </p>
-    <div class="form-group mb16" :class="{ '-rekt-locked-control': rektLocked }">
+    <div class="form-group mb16" :style="rektLocked ? { pointerEvents: 'none', opacity: 0.45 } : null">
       <div class="column">
         <div>←</div>
         <small>Small orders</small>
@@ -368,7 +368,7 @@
       v-if="isLegacy"
       :title="`THRESHOLD MULTIPLIER (${mutipliersCount})`"
       inset
-      :class="{ '-rekt-locked-control': rektLocked }"
+      :style="rektLocked ? { pointerEvents: 'none', opacity: 0.45 } : null"
     >
       <div class="form-group" v-if="multipliers.length">
         <label>

@@ -15,7 +15,7 @@
         :placeholder="paneId"
         @apply="resetPane($event)"
         class="-left -top"
-        :class="{ '-rekt-locked-control': rektLocked }"
+        :style="rektLocked ? { pointerEvents: 'none', opacity: 0.45 } : null"
       />
     </template>
   </Dialog>

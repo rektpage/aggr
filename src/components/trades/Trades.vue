@@ -15,7 +15,7 @@
       <dropdown v-model="sliderDropdownTrigger" interactive no-scroll>
         <slider
           style="width: 100px"
-          :class="{ '-rekt-locked-control': rektLocked }"
+          :style="rektLocked ? { pointerEvents: 'none', opacity: 0.45 } : null"
           :min="0"
           :max="10"
           :step="0.01"
@@ -44,6 +44,8 @@
       </dropdown>
       <button
         class="btn"
+        :disabled="rektLocked"
+        :title="rektLocked ? 'rekt.page default thresholds are on' : null"
         @click="
           sliderDropdownTrigger = sliderDropdownTrigger
             ? null
