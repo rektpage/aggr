@@ -1,6 +1,9 @@
 <template>
   <div>
-    <div class="form-group mb16">
+    <p v-if="rektLocked" class="thresholds__rekt-lock">
+      rekt.page default thresholds are on. Turn off &ldquo;Use default thresholds&rdquo; in the chart widget&rsquo;s symbol menu to edit.
+    </p>
+    <div class="form-group mb16" :class="{ '-rekt-locked-control': rektLocked }">
       <div class="column">
         <div>←</div>
         <small>Small orders</small>
@@ -365,6 +368,7 @@
       v-if="isLegacy"
       :title="`THRESHOLD MULTIPLIER (${mutipliersCount})`"
       inset
+      :class="{ '-rekt-locked-control': rektLocked }"
     >
       <div class="form-group" v-if="multipliers.length">
         <label>
@@ -401,6 +405,7 @@ import { ago } from '@/utils/helpers'
 import { Component, Vue } from 'vue-property-decorator'
 import Slider from '@/components/framework/picker/Slider.vue'
 import Thresholds from '@/components/settings/Thresholds.vue'
+import { rektPreset } from '@/services/rektPreset'
 import { formatAmount, parseMarket } from '@/services/productsService'
 import ToggableSection from '@/components/framework/ToggableSection.vue'
 import ColorPickerControl from '@/components/framework/picker/ColorPickerControl.vue'
@@ -427,6 +432,10 @@ import ToggableGroup from '@/components/framework/ToggableGroup.vue'
   }
 })
 export default class TradesSettings extends Vue {
+  get rektLocked() {
+    return rektPreset.locked
+  }
+
   paneId: string
   secondsAgoExample = '0s ago'
 

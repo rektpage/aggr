@@ -808,6 +808,10 @@ export default class Thresholds extends Vue {
   pointer-events: none;
   opacity: 0.45;
 }
+.-rekt-locked-control {
+  pointer-events: none;
+  opacity: 0.45;
+}
 .thresholds__rekt-lock {
   margin: 0 0 0.75rem;
   font-size: 0.85em;

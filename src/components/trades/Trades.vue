@@ -15,6 +15,7 @@
       <dropdown v-model="sliderDropdownTrigger" interactive no-scroll>
         <slider
           style="width: 100px"
+          :class="{ '-rekt-locked-control': rektLocked }"
           :min="0"
           :max="10"
           :step="0.01"
@@ -74,7 +75,7 @@ import { Component, Mixins } from 'vue-property-decorator'
 import { Trade } from '@/types/types'
 
 import aggregatorService from '@/services/aggregatorService'
-import { lastTape, tapeBus } from '@/services/rektPreset'
+import { lastTape, rektPreset, tapeBus } from '@/services/rektPreset'
 import gifsService from '@/services/gifsService'
 import PaneMixin from '@/mixins/paneMixin'
 import PaneHeader from '@/components/panes/PaneHeader.vue'
@@ -104,6 +105,10 @@ export default class Trades extends Mixins(PaneMixin) {
 
   get monochromeLogos() {
     return this.$store.state[this.paneId].monochromeLogos
+  }
+
+  get rektLocked() {
+    return rektPreset.locked
   }
 
   get thresholdsMultipler() {

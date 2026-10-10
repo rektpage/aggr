@@ -71,6 +71,8 @@ export function applyRektPreset(values: { trades: number; liquidations: number; 
     if (store.state.panes.panes[paneId].type !== 'trades') continue
     const pane = store.state[paneId]
     if (!pane) continue
+    // the "small ↔ large orders" multiplier scales every threshold; reset it before pinning the amounts
+    if (pane.thresholdsMultipler !== 1) store.commit(paneId + '/SET_THRESHOLDS_MULTIPLER', { value: 1, market: '' })
     if (pane.thresholds?.length) applyLadder(paneId, pane.thresholds, values.trades, TRADE_LADDER)
     if (pane.liquidations?.length) applyLadder(paneId, pane.liquidations, values.liquidations, LIQUIDATION_LADDER)
   }
