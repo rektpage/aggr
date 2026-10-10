@@ -398,7 +398,7 @@ class WorkspacesService {
 
     // tell the embedding dashboard so it resets its symbol selection too
     if (window.parent !== window) {
-      window.parent.postMessage(JSON.stringify({ op: 'reset' }), '*')
+      window.parent.postMessage(JSON.stringify({ op: 'reset' }), location.origin === 'null' ? '*' : location.origin)
     }
 
     window.location.reload()

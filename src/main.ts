@@ -20,7 +20,7 @@ let staleReported = false
 const reportStale = () => {
   if (staleReported) return
   staleReported = true
-  if (window.parent !== window) window.parent.postMessage(JSON.stringify({ op: 'stale' }), '*')
+  if (window.parent !== window) window.parent.postMessage(JSON.stringify({ op: 'stale' }), location.origin === 'null' ? '*' : location.origin)
   else window.location.reload()
 }
 window.addEventListener('vite:preloadError', event => {

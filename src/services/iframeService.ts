@@ -85,6 +85,24 @@ async function resolveBases(
   return markets
 }
 
+/** rekt.page (SEC-1): the settings mutations the embedding app's widget popover may call */
+const SETTING_MUTATIONS = new Set([
+  'SET_TIMEZONE_OFFSET',
+  'SET_AUDIO_FILTER',
+  'TOGGLE_AGGREGATION',
+  'SET_QUOTE_AS_PREFERED_CURRENCY',
+  'TOGGLE_SLIPPAGE',
+  'TOGGLE_ANIMATIONS',
+  'TOGGLE_AUTO_HIDE_HEADERS',
+  'TOGGLE_AUTO_HIDE_NAMES',
+  'TOGGLE_NORMAMIZE_WATERMARKS',
+  'TOGGLE_THRESHOLDS_TABLE'
+])
+
+/** rekt.page (SEC-1): messages go to our own origin only, never '*' (file:// origins are 'null') */
+export const parentOrigin = () =>
+  location.origin === 'null' ? '*' : location.origin
+
 class IframeService {
   constructor() {
     this.initialize()
@@ -164,6 +182,13 @@ class IframeService {
 
   listen() {
     window.addEventListener('message', event => {
+      // rekt.page (SEC-1, 10-11): only our own embedding page may drive this frame. Without this,
+      // a site that opened the app in a window could post importWorkspace into this frame and run
+      // script (indicators compile with new Function) on the app's origin.
+      if (event.source !== window.parent || event.origin !== location.origin) {
+        return
+      }
+
       if (
         !event.data ||
         typeof event.data !== 'string' ||
@@ -198,6 +223,9 @@ class IframeService {
         case 'setSetting':
           // liquidation-terminal: the embedding app renders aggr's global settings in its own
           // UI and drives them through the store's own mutations.
+          if (!SETTING_MUTATIONS.has(json.data?.mutation)) {
+            break
+          }
           store.commit(`settings/${json.data.mutation}`, json.data.value)
           this.send('settings', this.globalSettings())
           break
@@ -376,7 +404,7 @@ class IframeService {
         op,
         data
       }),
-      '*'
+      parentOrigin()
     )
   }
 }
