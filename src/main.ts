@@ -36,6 +36,27 @@ Vue.component('presets', Presets)
 Vue.directive('autofocus', autofocus)
 Vue.directive('draggable-market', draggableMarket)
 
+// rekt.page (2026-10-10): this copy only runs inside the rekt.page terminal. Opened on its own
+// (app.rekt.page/aggr/) it would hand out the whole chart without the app's sign-in, so it shows a
+// pointer to the app instead. This is a front door, not a lock — aggr is open source and its data is
+// public; what the license protects lives on the rekt.page API. Development builds stay standalone.
+const embedded = (() => {
+  try {
+    return window.top !== window.self
+  } catch {
+    return true
+  }
+})()
+
+if (!embedded && !import.meta.env.DEV) {
+  document.title = 'rekt.page'
+  document.body.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#07090d;color:#c9d4ea;font:16px/1.6 sans-serif;text-align:center">' +
+    '<div><p style="margin:0 0 12px">This chart runs inside the rekt.page terminal.</p>' +
+    '<a href="https://app.rekt.page" style="color:#97fce4">Open rekt.page</a></div></div>'
+  throw new Error('rekt.page: aggr must run inside the rekt.page app')
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const base_url = import.meta.env.VITE_APP_BASE_PATH || '/'
