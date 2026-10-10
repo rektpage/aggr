@@ -10,6 +10,28 @@ import '@fontsource/spline-sans-mono/600.css'
 import './assets/sass/app.scss'
 import store from './store'
 
+/*
+ * rekt.page (2026-10-10): after a deploy the page that is already open still runs the old build, and the
+ * dialogs it loads on demand (chart / trades settings) point at chunk files the new deploy removed. The
+ * import then fails and the dialog spins forever. Reload to the latest build instead: inside the
+ * terminal ask the embedding app (it reloads the whole page), standalone reload this one.
+ */
+let staleReported = false
+const reportStale = () => {
+  if (staleReported) return
+  staleReported = true
+  if (window.parent !== window) window.parent.postMessage(JSON.stringify({ op: 'stale' }), '*')
+  else window.location.reload()
+}
+window.addEventListener('vite:preloadError', event => {
+  event.preventDefault()
+  reportStale()
+})
+window.addEventListener('unhandledrejection', event => {
+  const message = String((event.reason && event.reason.message) || event.reason || '')
+  if (/dynamically imported module|Importing a module script failed|error loading dynamically imported/i.test(message)) reportStale()
+})
+
 import Editable from '@/components/framework/Editable.vue'
 import DropdownComponent from '@/components/framework/Dropdown.vue'
 import Presets from '@/components/framework/Presets.vue'
