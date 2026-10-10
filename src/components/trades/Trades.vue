@@ -74,6 +74,7 @@ import { Component, Mixins } from 'vue-property-decorator'
 import { Trade } from '@/types/types'
 
 import aggregatorService from '@/services/aggregatorService'
+import { lastTape, tapeBus } from '@/services/rektPreset'
 import gifsService from '@/services/gifsService'
 import PaneMixin from '@/mixins/paneMixin'
 import PaneHeader from '@/components/panes/PaneHeader.vue'
@@ -197,10 +198,21 @@ export default class Trades extends Mixins(PaneMixin) {
       this.$refs.tradesContainer,
       this.$store.state[this.paneId].maxRows
     )
+    // rekt.page: fill the list with the last day at the preset thresholds (silently, no sound)
+    tapeBus.$on('prefill', this.onPrefill)
+    if (lastTape) this.onPrefill(lastTape)
+  }
+
+  onPrefill(trades: Trade[]) {
+    if (!this.feed) return
+    this.feed.clear()
+    this.feed.processTradesSilent(trades.map(trade => ({ ...trade })))
+    this.showPlaceholder = !this.$refs.tradesContainer?.children.length
   }
 
   beforeDestroy() {
     aggregatorService.off('trades', this.onTrades)
+    tapeBus.$off('prefill', this.onPrefill)
 
     if (this.feed) {
       this.feed.destroy()

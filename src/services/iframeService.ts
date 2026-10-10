@@ -10,6 +10,7 @@ import aggregatorService from '@/services/aggregatorService'
 import workspacesService from '@/services/workspacesService'
 import { INFRAME } from '@/utils/constants'
 import { subscribeOnce } from '../utils/store'
+import { applyRektPreset } from '@/services/rektPreset'
 
 interface PaneSpec {
   /** explicit market ids, e.g. BINANCE_FUTURES:btcusdt */
@@ -222,6 +223,10 @@ class IframeService {
               store.commit(`${paneId}/SET_TIMEFRAME`, json.data?.timeframe)
             }
           }
+          break
+        case 'setTapePreset':
+          // rekt.page: 체결·청산 목록 기준을 앱의 종목별 기본값으로 고정(편집 잠금). null 이면 풀어 준다 (10-10)
+          applyRektPreset(json.data ?? null)
           break
         case 'setTradesAudioThreshold':
           // rekt.page: 체결 목록이 소리를 낼 최소 금액. '100%' = 목록에 뜨는 체결만 소리를 낸다 (송출 화면, 10-10)

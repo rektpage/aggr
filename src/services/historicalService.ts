@@ -56,13 +56,14 @@ class HistoricalService extends EventEmitter {
    * rekt.page serves history as fixed chunks of CHUNK_BARS bars per coin and timeframe
    * (proxy /bars/chunk/{coin}/{timeframe}/{index}), so every visitor asks for the same URLs and
    * Cloudflare can cache them. Any range is mapped onto the chunks that cover it, then trimmed
-   * back to the requested markets and range. Only BTC and ETH are served.
+   * back to the requested markets and range. BTC, ETH, XRP and SOL are served.
    */
   coinOf(markets: string[]) {
     const coins = new Set(
       markets.map(market => {
         const pair = market.toUpperCase()
-        return pair.includes('BTC') ? 'BTC' : pair.includes('ETH') ? 'ETH' : ''
+        // rekt.page: BTC · ETH · XRP · SOL (10-10 XRP·SOL 추가)
+        return ['BTC', 'ETH', 'XRP', 'SOL'].find(coin => pair.includes(coin)) ?? ''
       })
     )
     return coins.size === 1 ? [...coins][0] : ''

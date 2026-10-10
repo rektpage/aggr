@@ -1,8 +1,11 @@
 <template>
   <div
     class="thresholds"
-    :class="{ '-dragging': dragging, '-rendering': rendering }"
+    :class="{ '-dragging': dragging, '-rendering': rendering, '-rekt-locked': rektLocked }"
   >
+    <p v-if="rektLocked" class="thresholds__rekt-lock">
+      rekt.page default thresholds are on. Turn off &ldquo;Use default thresholds&rdquo; in the chart widget&rsquo;s symbol menu to edit.
+    </p>
     <table class="table thresholds-table" v-if="showThresholdsAsTable">
       <thead>
         <tr>
@@ -164,6 +167,7 @@ import { Threshold } from '@/store/panesSettings/trades'
 import ThresholdDropdown from './ThresholdDropdown.vue'
 import ThresholdPresetDialog from '@/components/trades/ThresholdPresetDialog.vue'
 import defaultTresholds from '@/store/defaultThresholds.json'
+import { rektPreset } from '@/services/rektPreset'
 
 import merge from 'lodash.merge'
 import { Preset } from '@/types/types'
@@ -198,6 +202,10 @@ export default class Thresholds extends Vue {
 
   rendering = true
   dragging = null
+
+  get rektLocked() {
+    return rektPreset.locked
+  }
   editing = null
   selectedThresholdId = null
   selectedSliderHandle = null
@@ -793,5 +801,16 @@ export default class Thresholds extends Vue {
       border-radius: 0 0 0.75rem 0.75rem;
     }
   }
+}
+
+// rekt.page: thresholds pinned to the app's preset (read-only)
+.thresholds.-rekt-locked > :not(.thresholds__rekt-lock) {
+  pointer-events: none;
+  opacity: 0.45;
+}
+.thresholds__rekt-lock {
+  margin: 0 0 0.75rem;
+  font-size: 0.85em;
+  opacity: 0.85;
 }
 </style>
