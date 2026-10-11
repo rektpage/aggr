@@ -265,6 +265,10 @@ class IframeService {
             }
           }
           break
+        case 'setAudioTiming':
+          // rekt.page: livestream only - book notes on the audio clock instead of timers (10-12)
+          audioService.preciseTiming = !!json.data?.precise
+          break
         case 'setAudioDelay':
           // rekt.page: 송출 화면에서 소리를 화면에 맞춰 늦춘다 (ms, 10-10)
           audioService.extraDelay = Math.max(0, Math.min(5000, +json.data?.value || 0)) / 1000

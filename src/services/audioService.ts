@@ -132,6 +132,13 @@ class AudioService {
    * sounds back by that much to land with the rows. 0 everywhere else.
    */
   extraDelay = 0
+  /**
+   * rekt.page (2026-10-12): livestream only. Book every note and its fade-out on the audio clock up front
+   * instead of waiting on setTimeout. On the 2-core stream VM the main thread is often busy, timers fire
+   * late, and a late fade-out timer held notes at full volume ("stretched" sounds). Off everywhere else,
+   * so the regular app keeps aggr's original behaviour.
+   */
+  preciseTiming = false
   gainNode: any
 
   connect() {
@@ -347,7 +354,7 @@ class AudioService {
 
     const time = this.getNextTime(delay)
 
-    setTimeout(
+    this.later(
       () => {
         const gainNode = this.context.createGain()
         const source = this.context.createBufferSource()
@@ -391,13 +398,16 @@ class AudioService {
 
     let time = this.getNextTime(delay)
 
-    setTimeout(
+    this.later(
       () => {
         if (!this.context) {
           return
         }
 
-        time = this.context.currentTime
+        // upstream starts the note whenever the timer fires; precise timing keeps the cue time
+        time = this.preciseTiming
+          ? Math.max(time, this.context.currentTime)
+          : this.context.currentTime
 
         const source = this.context.createOscillator()
         const gainNode = this.context.createGain()
@@ -449,7 +459,7 @@ class AudioService {
       if (fadeOut) {
         gainNode.gain.setValueAtTime(gain, time + fadeIn + holdDuration)
 
-        setTimeout(
+        this.later(
           () => {
             gainNode.gain.exponentialRampToValueAtTime(
               endGain,
@@ -477,6 +487,12 @@ class AudioService {
     }
 
     source.stop(time + fadeIn + holdDuration + fadeOut)
+  }
+
+  /** rekt.page: precise timing runs the step now (it books itself on the audio clock), else upstream's timer */
+  later(fn: () => void, ms: number) {
+    if (this.preciseTiming) fn()
+    else setTimeout(fn, ms)
   }
 
   getNextTime(delay) {
